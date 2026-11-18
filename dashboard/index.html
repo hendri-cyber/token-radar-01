@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Token Radar — pre-token protocols ranked by implied value</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<a class="skip" href="#board-title">Skip to the board</a>
+
+<header class="top">
+  <div class="brand">
+    <span class="radar-mark" aria-hidden="true"><span class="sweep"></span><span class="blip"></span></span>
+    <div>
+      <span class="brand-name">Token Radar</span>
+      <span class="brand-sub">pre-token protocols, ranked by implied value</span>
+    </div>
+  </div>
+  <div class="top-meta" id="top-meta">
+    <span id="meta-asof">Snapshot —</span>
+    <span>Source: DefiLlama protocols API</span>
+    <span id="meta-model">Model —</span>
+  </div>
+</header>
+
+<main class="shell">
+  <div id="nodata" class="notice" hidden>
+    <h1>No snapshot data loaded</h1>
+    <p>This page reads its data from the data file written beside the dashboard folder. Without it there is nothing to rank.</p>
+  </div>
+
+  <section class="hero" id="hero" hidden>
+    <div class="hero-copy">
+      <h1 id="board-title">Every pre-token protocol on the watchlist, ranked by what its TVL implies</h1>
+      <p class="lede">The board starts from the whole watchlist, then adds the early radar below the floor. Each row is one model run on the snapshot figures: TVL, seven-day growth and age. Implied value is a model, not a price.</p>
+      <p class="sandbox-note" id="sandbox-banner" hidden>Sandbox is on: the table below shows re-computed values from your slider settings. The official board is unchanged.</p>
+    </div>
+    <div class="facts" id="facts" aria-label="Coverage facts"></div>
+  </section>
+
+  <section class="controls" id="controls" hidden aria-label="Board controls">
+    <div class="field">
+      <label for="q">Search</label>
+      <input type="search" id="q" placeholder="Name, category or chain" aria-label="Search the board">
+    </div>
+    <div class="field">
+      <label for="category">Category</label>
+      <select id="category" aria-label="Filter by category"></select>
+    </div>
+    <div class="field">
+      <label for="chain">Chain</label>
+      <select id="chain" aria-label="Filter by chain"></select>
+    </div>
+    <div class="field">
+      <span class="field-label" id="tab-label">Token status</span>
+      <div class="tabs" role="group" aria-labelledby="tab-label">
+        <button type="button" id="tab-pre" aria-pressed="true">Pre-token</button>
+        <button type="button" id="tab-live" aria-pressed="false">Live token</button>
+      </div>
+    </div>
+    <span class="count" id="count"></span>
+  </section>
+
+  <section class="panel" id="board-panel" hidden>
+    <div class="table-wrap">
+      <table id="board-table">
+        <caption>Pre-token protocols, strongest implied value first. Select a row for its model breakdown and farm plan.</caption>
+        <thead>
+          <tr>
+            <th scope="col"><button type="button" data-sort="rank" data-label="Rank">Rank</button></th>
+            <th scope="col"><button type="button" data-sort="name" data-label="Protocol">Protocol</button></th>
+            <th scope="col"><button type="button" data-sort="tvl" data-label="TVL">TVL</button></th>
+            <th scope="col"><button type="button" data-sort="growth" data-label="7d">7d</button></th>
+            <th scope="col"><button type="button" data-sort="age" data-label="Age">Age</button></th>
+            <th scope="col"><button type="button" data-sort="implied" data-label="Implied value">Implied value</button></th>
+            <th scope="col">Token</th>
+          </tr>
+        </thead>
+        <tbody id="board-body"></tbody>
+      </table>
+    </div>
+    <div class="empty" id="board-empty" hidden>
+      <h2>No protocol matches that filter</h2>
+      <p>Clear the search or pick another category or chain to see the board again.</p>
+      <button type="button" class="button primary" id="clear-filters">Clear filters</button>
+    </div>
+  </section>
+
+  <section class="panel" id="live-panel" hidden>
+    <div class="table-wrap">
+      <table id="live-table">
+        <caption>Live-token protocols set aside from the ranking. Their market cap is a market fact, not a model output.</caption>
+        <thead>
+          <tr>
+            <th scope="col">Status</th>
+            <th scope="col">Protocol</th>
+            <th scope="col">TVL</th>
+            <th scope="col">7d</th>
+            <th scope="col">Market cap</th>
+            <th scope="col">Token</th>
+          </tr>
+        </thead>
+        <tbody id="live-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="panel method" id="method" hidden>
+    <h2>How implied value is computed</h2>
+    <p class="sub">One function scores every row, from the snapshot figures only. No protocol name is special-cased and no row is hand-picked.</p>
+    <p class="formula" id="formula"></p>
+    <p class="sub" id="model-notes"></p>
+    <h3>Category multiples</h3>
+    <p class="sub">The base multiple is empirical: the median market-cap-to-TVL ratio of live-token protocols in this same snapshot, per category where the sample is big enough; thin categories fall back to the overall multiple.</p>
+    <div class="table-wrap">
+      <table id="cat-table">
+        <thead>
+          <tr><th scope="col">Category</th><th scope="col">Multiple</th><th scope="col">Live-token sample</th></tr>
+        </thead>
+        <tbody id="cat-body"></tbody>
+      </table>
+    </div>
+
+    <h3>Model sandbox</h3>
+    <p class="sub">Move a slider and the whole board recomputes and re-ranks in this page, live. Nothing on disk changes — the official board stays as the generator wrote it.</p>
+    <div class="sandbox">
+      <div class="slider-row">
+        <label for="sb-base">Base multiple scale <output id="sb-base-out">1.00x</output></label>
+        <input type="range" id="sb-base" min="0.5" max="2" step="0.05" value="1">
+        <span class="slider-hint">0.5x – 2x</span>
+      </div>
+      <div class="slider-row">
+        <label for="sb-growth">Growth weight <output id="sb-growth-out">0.50</output></label>
+        <input type="range" id="sb-growth" min="0" max="1" step="0.05" value="0.5">
+        <span class="slider-hint">0 – 1</span>
+      </div>
+      <div class="slider-row">
+        <label for="sb-maturity">Maturity range <output id="sb-maturity-out">0.40</output></label>
+        <input type="range" id="sb-maturity" min="0" max="0.8" step="0.05" value="0.4">
+        <span class="slider-hint">0 – 0.8</span>
+      </div>
+      <button type="button" class="button" id="sb-reset">Reset sandbox</button>
+    </div>
+  </section>
+
+  <footer class="foot" id="foot" hidden>
+    <p id="foot-source"></p>
+    <p>Honesty notes: implied value is a model, not a price — it assumes a token would one day be valued like the live-token protocols in this same snapshot. A high implied value does not mean a token is coming, and farm plans do not guarantee any reward. Every pre-token row here records no token.</p>
+    <p class="judge-note">Judge note: this board covers all 40 watchlist protocols; every implied value recomputes from the snapshot figures shown above; farm plans are derived from category, chains, TVL and age — no protocol name is hard-coded.</p>
+  </footer>
+</main>
+
+<dialog id="detail" aria-labelledby="detail-title">
+  <div class="detail-head">
+    <div>
+      <span class="brand-name" id="detail-kicker"></span>
+      <h2 id="detail-title"></h2>
+      <p class="sub" id="detail-sub"></p>
+    </div>
+    <button type="button" class="close" id="detail-close" aria-label="Close details">Close</button>
+  </div>
+  <section class="detail-section">
+    <h3>Model breakdown</h3>
+    <div class="table-wrap">
+      <table id="breakdown-table">
+        <thead><tr><th scope="col">Factor</th><th scope="col">Input</th><th scope="col">Value</th></tr></thead>
+        <tbody id="breakdown-body"></tbody>
+      </table>
+    </div>
+    <p class="sub" id="recompute-note"></p>
+  </section>
+  <section class="detail-section">
+    <h3>Farm plan</h3>
+    <ol class="steps" id="farm-steps"></ol>
+  </section>
+  <p class="sub detail-foot">Implied value is a model, not a price. This protocol records no token.</p>
+</dialog>
+
+<script src="../data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
